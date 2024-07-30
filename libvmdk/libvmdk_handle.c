@@ -491,7 +491,8 @@ int libvmdk_handle_open(
 	 * the filename instead of the extent data filename in the descriptor file is used.
 	 */
 /* TODO thread lock */
-	if( internal_handle->disk_type == LIBVMDK_DISK_TYPE_MONOLITHIC_SPARSE )
+	if( internal_handle->disk_type == LIBVMDK_DISK_TYPE_MONOLITHIC_SPARSE
+		|| internal_handle->disk_type == LIBVMDK_DISK_TYPE_STREAM_OPTIMIZED)
 	{
 		if( libcdata_array_get_number_of_entries(
 		     internal_handle->extent_values_array,
@@ -776,11 +777,23 @@ int libvmdk_handle_open_wide(
 
 		goto on_error;
 	}
-	/* Note that extent file names can be renamed hence for a single monolithic sparse image
+
+	data_files_path_end = wide_string_search_character_reverse(
+		filename,
+		(wint_t)LIBCPATH_SEPARATOR,
+		filename_length + 1);
+
+	if (data_files_path_end != NULL)
+	{
+		data_files_path_length = (size_t)(data_files_path_end - filename) + 1;
+	}
+
+	/* Note that extent file names can be renamed hence for a single sparse image
 	 * the filename instead of the extent data filename in the descriptor file is used.
 	 */
 /* TODO thread lock */
-	if( internal_handle->disk_type == LIBVMDK_DISK_TYPE_MONOLITHIC_SPARSE )
+	if( internal_handle->disk_type == LIBVMDK_DISK_TYPE_MONOLITHIC_SPARSE
+		|| internal_handle->disk_type == LIBVMDK_DISK_TYPE_STREAM_OPTIMIZED)
 	{
 		if( libcdata_array_get_number_of_entries(
 		     internal_handle->extent_values_array,
@@ -826,10 +839,18 @@ int libvmdk_handle_open_wide(
 			}
 			if( extent_values->type == LIBVMDK_EXTENT_TYPE_SPARSE )
 			{
+				/* Only pass in the file name not the full path */
+				const wchar_t* only_filename_start = filename;
+				size_t only_filename_length = filename_length;
+				if (data_files_path_end != NULL) {
+					only_filename_start = data_files_path_end;
+					only_filename_length = filename_length - data_files_path_length;
+				}
+
 				if( libvmdk_extent_values_set_alternate_filename_wide(
 				     extent_values,
-				     filename,
-				     filename_length,
+					 only_filename_start,
+					 only_filename_length,
 				     error ) != 1 )
 				{
 					libcerror_error_set(
@@ -853,15 +874,7 @@ int libvmdk_handle_open_wide(
 			}
 		}
 	}
-	data_files_path_end = wide_string_search_character_reverse(
-	                       filename,
-	                       (wint_t) LIBCPATH_SEPARATOR,
-	                       filename_length + 1 );
 
-	if( data_files_path_end != NULL )
-	{
-		data_files_path_length = (size_t) ( data_files_path_end - filename ) + 1;
-	}
 	if( data_files_path_length > 0 )
 	{
 #if defined( HAVE_LIBVMDK_MULTI_THREAD_SUPPORT )

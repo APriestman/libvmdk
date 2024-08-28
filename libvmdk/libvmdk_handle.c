@@ -844,7 +844,7 @@ int libvmdk_handle_open_wide(
 				size_t only_filename_length = filename_length;
 				if (data_files_path_end != NULL) {
 					only_filename_start = data_files_path_end;
-					only_filename_length = filename_length - data_files_path_length;
+					only_filename_length = filename_length + 1 - data_files_path_length;
 				}
 
 				if( libvmdk_extent_values_set_alternate_filename_wide(
